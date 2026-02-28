@@ -37,8 +37,9 @@ export default function SettleUpPage() {
       setIsLoading(true);
       const response = await fetch(`/api/groups/${groupId}/balances/simplified`);
       if (response.ok) {
-        const data = await response.json();
-        setDebts(data);
+        const result = await response.json();
+        const debtsList = result.data?.debts || result.debts || (Array.isArray(result) ? result : []);
+        setDebts(debtsList);
       }
     } catch (error) {
       console.error('Failed to fetch debts:', error);
@@ -49,18 +50,29 @@ export default function SettleUpPage() {
 
   const handleSubmit = async (debtId: string, amount: number) => {
     try {
+      // Find the debt to get the to_user_id
+      const debt = debts.find((d) => d.id === debtId);
+      if (!debt) {
+        throw new Error('Debt not found');
+      }
+
+      // Determine who to pay: if current user owes, pay the to_user; if current user is owed, the from_user pays
+      const toUserId = debt.from_user_id === user?.user_id
+        ? debt.to_user_id
+        : debt.from_user_id;
+
       const response = await fetch(`/api/groups/${groupId}/settle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ debt_id: debtId, amount }),
+        body: JSON.stringify({ to_user_id: toUserId, amount }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(error.error || error.message || 'Settlement failed');
       }
 
-      showNotification('Payment recorded', 'success');
+      showNotification('Payment recorded successfully', 'success');
       await fetchDebts();
     } catch (error) {
       throw error;

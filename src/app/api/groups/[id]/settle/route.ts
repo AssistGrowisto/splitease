@@ -38,12 +38,16 @@ export async function POST(
 
     const now = new Date().toISOString();
 
+    // Get group currency
+    const group = await groupRepo.findById(groupId);
+    const currency = group?.base_currency || 'INR';
+
     // Create settlement expense
     const settlement = await expenseRepo.create({
       group_id: groupId,
       description: 'Settlement payment',
       total_amount: amount,
-      currency: 'USD',
+      currency: currency,
       split_type: 'equal',
       expense_date: now,
       created_by: userId,
@@ -85,7 +89,6 @@ export async function POST(
     try {
       const recipient = await userRepo.findById(to_user_id);
       const sender = await userRepo.findById(userId);
-      const group = await groupRepo.findById(groupId);
       if (recipient && sender && group) {
         await emailService.sendSettlementRecorded(group, sender, recipient, amount);
       }
