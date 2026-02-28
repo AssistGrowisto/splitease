@@ -810,6 +810,8 @@ export class GoogleSheetsActivityLogRepo
     const logData = {
       log_id,
       ...log,
+      // Serialize details to JSON string for Google Sheets compatibility
+      details: log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details) : log.details) : '',
       timestamp: now,
     };
 
