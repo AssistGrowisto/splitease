@@ -518,7 +518,7 @@ export class GoogleSheetsExpenseRepo extends GoogleSheetsBase implements IExpens
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.groupId === groupId && !obj.deletedAt) {
+      if (obj.group_id === groupId && !obj.deletedAt) {
         expenses.push(this.parseExpense(obj));
       }
     }
@@ -627,7 +627,7 @@ export class GoogleSheetsExpensePayerRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expenseId === expenseId) {
+      if (obj.expense_id === expenseId) {
         payers.push(this.parseExpensePayer(obj));
       }
     }
@@ -662,7 +662,7 @@ export class GoogleSheetsExpensePayerRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expenseId === expenseId) {
+      if (obj.expense_id === expenseId) {
         const emptyRow = headers.map(() => '');
         await this.updateRow(TABS.EXPENSE_PAYERS, i - 1, emptyRow);
       }
@@ -695,7 +695,7 @@ export class GoogleSheetsExpenseSplitRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expenseId === expenseId) {
+      if (obj.expense_id === expenseId) {
         splits.push(this.parseExpenseSplit(obj));
       }
     }
@@ -730,7 +730,7 @@ export class GoogleSheetsExpenseSplitRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expenseId === expenseId) {
+      if (obj.expense_id === expenseId) {
         const emptyRow = headers.map(() => '');
         await this.updateRow(TABS.EXPENSE_SPLITS, i - 1, emptyRow);
       }
@@ -764,7 +764,7 @@ export class GoogleSheetsActivityLogRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expenseId === expenseId) {
+      if (obj.expense_id === expenseId) {
         logs.push(this.parseActivityLog(obj));
       }
     }
@@ -779,7 +779,7 @@ export class GoogleSheetsActivityLogRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.groupId === groupId) {
+      if (obj.group_id === groupId) {
         logs.push(this.parseActivityLog(obj));
       }
     }
@@ -794,7 +794,7 @@ export class GoogleSheetsActivityLogRepo
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.userId === userId && groupIds.includes(obj.groupId)) {
+      if (obj.user_id === userId && groupIds.includes(obj.group_id)) {
         logs.push(this.parseActivityLog(obj));
       }
     }
