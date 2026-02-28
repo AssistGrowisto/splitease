@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        throw new Error(error.error || error.message || 'Login failed');
       }
 
       const userData = await response.json();
@@ -94,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.error || error.message || 'Registration failed');
       }
 
-      const userData = await response.json();
+      const result = await response.json();
+      const userData = result.data?.user || result;
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
