@@ -53,9 +53,27 @@ export default function GroupSettingsPage() {
       setIsLoading(true);
       const response = await fetch(`/api/groups/${groupId}`);
       if (response.ok) {
-        const data = await response.json();
-        setGroup(data);
-        setEditingName(data.name);
+        const result = await response.json();
+        const data = result.data || result;
+        const grp = data.group || data;
+        const memberList = (data.members || []).map((m: any) => ({
+          id: m.user_id || m.id,
+          display_name: m.display_name || m.user_id || m.id,
+          email: m.email || '',
+          is_creator: m.role === 'creator',
+          net_balance: 0,
+        }));
+
+        const groupState: Group = {
+          id: grp.group_id || grp.id || '',
+          name: grp.group_name || grp.name || '',
+          base_currency: grp.base_currency || 'INR',
+          creator_id: grp.created_by || grp.creator_id || '',
+          members: memberList,
+        };
+
+        setGroup(groupState);
+        setEditingName(groupState.name);
       }
     } catch (err) {
       console.error('Failed to fetch group:', err);
@@ -108,6 +126,7 @@ export default function GroupSettingsPage() {
 
     try {
       setIsSaving(true);
+      setError('');
       const response = await fetch(`/api/groups/${groupId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,13 +134,13 @@ export default function GroupSettingsPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setGroup(data);
         setNewMemberEmail('');
         showNotification('Member added', 'success');
+        // Re-fetch group data to get updated members list
+        await fetchGroup();
       } else {
         const err = await response.json();
-        setError(err.message);
+        setError(err.error || err.message || 'Failed to add member');
       }
     } catch (err) {
       setError('Failed to add member');
@@ -132,14 +151,18 @@ export default function GroupSettingsPage() {
 
   const handleRemoveMember = async (memberId: string) => {
     try {
+      setError('');
       const response = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setGroup(data);
         showNotification('Member removed', 'success');
+        // Re-fetch group data to get updated members list
+        await fetchGroup();
+      } else {
+        const err = await response.json();
+        setError(err.error || err.message || 'Failed to remove member');
       }
     } catch (err) {
       setError('Failed to remove member');
