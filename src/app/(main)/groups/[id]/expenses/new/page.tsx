@@ -19,6 +19,13 @@ interface Currency {
   symbol: string;
 }
 
+const DEFAULT_CURRENCIES: Currency[] = [
+  { code: 'INR', name: 'Indian Rupee', symbol: '\u20B9' },
+  { code: 'USD', name: 'US Dollar', symbol: '$' },
+  { code: 'EUR', name: 'Euro', symbol: '\u20AC' },
+  { code: 'GBP', name: 'British Pound', symbol: '\u00A3' }
+];
+
 export default function AddExpensePage() {
   const params = useParams();
   const router = useRouter();
@@ -27,7 +34,7 @@ export default function AddExpensePage() {
 
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [baseCurrency, setBaseCurrency] = useState('INR');
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>(DEFAULT_CURRENCIES);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,22 +53,28 @@ export default function AddExpensePage() {
       if (groupRes.ok) {
         const groupResult = await groupRes.json();
         const groupData = groupResult.data || groupResult;
-        setGroupMembers(groupData.members || []);
-        setBaseCurrency(groupData.group?.base_currency || groupData.base_currency || 'INR');
+        const members = groupData.members || [];
+        setGroupMembers(members);
+        
+        const group = groupData.group || groupData;
+        setBaseCurrency(group?.base_currency || 'INR');
       }
 
       if (currenciesRes.ok) {
         const currResult = await currenciesRes.json();
-        const rates = currResult.data?.rates || currResult.rates || currResult;
+        const rates = currResult.data?.rates || currResult.rates || [];
+        
         if (Array.isArray(rates) && rates.length > 0 && rates[0].code) {
           setCurrencies(rates);
         } else {
-          // Provide default currencies
-          setCurrencies([
-            { code: 'INR', name: 'Indian Rupee', symbol: '\u20B9' },
-            { code: 'USD', name: 'US Dollar', symbol: '
+          setCurrencies(DEFAULT_CURRENCIES);
+        }
+      } else {
+        setCurrencies(DEFAULT_CURRENCIES);
+      }
     } catch (error) {
       console.error('Failed to fetch group data:', error);
+      setCurrencies(DEFAULT_CURRENCIES);
     } finally {
       setIsLoading(false);
     }
@@ -70,12 +83,17 @@ export default function AddExpensePage() {
   const handleSubmit = async (formData: any) => {
     try {
       // Transform form data to match API schema
-      const payers = [{ user_id: formData.paid_by, amount_paid: formData.amount }];
+      const payers = [{
+        user_id: formData.paid_by,
+        amount_paid: formData.amount
+      }];
+      
       const splits = Object.values(formData.splits || {}).map((s: any) => ({
         user_id: s.member_id,
         split_amount: s.amount,
         split_percentage: formData.split_type === 'percentage' ? (s.amount / formData.amount * 100) : undefined
       }));
+      
       const apiPayload = {
         description: formData.description,
         total_amount: formData.amount,
@@ -85,7 +103,8 @@ export default function AddExpensePage() {
         splits,
         split_type: formData.split_type
       };
-      const response = await fetch('/api/groups/' + groupId + '/expenses', {
+
+      const response = await fetch(`/api/groups/${groupId}/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiPayload),
@@ -99,124 +118,8 @@ export default function AddExpensePage() {
       showNotification('Expense added successfully', 'success');
       router.push(`/groups/${groupId}`);
     } catch (error) {
-      throw error;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner />
-      </div>
-    );
-  }
-
-  return (
-    <div className="pb-20 min-h-screen">
-      <Header
-        title="Add Expense"
-        backButton={{ onClick: () => router.back() }}
-      />
-
-      <div className="p-4">
-        <ExpenseForm
-          groupMembers={groupMembers}
-          baseCurrency={baseCurrency}
-          currencies={currencies}
-          onSubmit={handleSubmit}
-        />
-      </div>
-    </div>
-  );
-}
- },
-            { code: 'EUR', name: 'Euro', symbol: '\u20AC' },
-            { code: 'GBP', name: 'British Pound', symbol: '\u00A3' }
-          ]);
-        }
-      } else {
-        setCurrencies([
-          { code: 'INR', name: 'Indian Rupee', symbol: '\u20B9' },
-          { code: 'USD', name: 'US Dollar', symbol: '
-    } catch (error) {
-      console.error('Failed to fetch group data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (formData: any) => {
-    try {
-      const response = await fetch(`/api/groups/${groupId}/expenses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      showNotification('Expense added successfully', 'success');
-      router.push(`/groups/${groupId}`);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner />
-      </div>
-    );
-  }
-
-  return (
-    <div className="pb-20 min-h-screen">
-      <Header
-        title="Add Expense"
-        backButton={{ onClick: () => router.back() }}
-      />
-
-      <div className="p-4">
-        <ExpenseForm
-          groupMembers={groupMembers}
-          baseCurrency={baseCurrency}
-          currencies={currencies}
-          onSubmit={handleSubmit}
-        />
-      </div>
-    </div>
-  );
-}
- }
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch group data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (formData: any) => {
-    try {
-      const response = await fetch(`/api/groups/${groupId}/expenses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      showNotification('Expense added successfully', 'success');
-      router.push(`/groups/${groupId}`);
-    } catch (error) {
+      console.error('Failed to submit expense:', error);
+      showNotification(error instanceof Error ? error.message : 'Failed to add expense', 'error');
       throw error;
     }
   };

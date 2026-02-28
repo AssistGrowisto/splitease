@@ -17,10 +17,6 @@ interface Expense {
   expense_date: string;
   payers?: any[];
   is_settlement: boolean;
-  id?: string;
-  amount?: number;
-  date?: string;
-  paid_by_names?: string[];
 }
 
 interface GroupMember {
@@ -69,9 +65,9 @@ export default function GroupDetailPage() {
       }
       if (expensesRes.ok) {
         const expResult = await expensesRes.json();
-        const expArray = expResult.data?.expenses || expResult.expenses || (Array.isArray(expResult) ? expResult : []);
+        const expArray = expResult.data?.expenses || [];
         setExpenses(expArray.sort((a: Expense, b: Expense) => 
-          new Date(b.expense_date || b.date).getTime() - new Date(a.expense_date || a.date).getTime()
+          new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
         ));
       }
       if (balancesRes.ok) {
@@ -197,7 +193,7 @@ export default function GroupDetailPage() {
               />
             ) : (
               expenses.map((expense) => (
-                <Link key={expense.expense_id || expense.id} href={`/groups/${groupId}/expenses/${expense.expense_id || expense.id}`}>
+                <Link key={expense.expense_id} href={`/groups/${groupId}/expenses/${expense.expense_id}`}>
                   <Card
                     className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${
                       expense.is_settlement ? 'border-l-[#34A853]' : 'border-l-[#1A73E8]'
@@ -207,14 +203,14 @@ export default function GroupDetailPage() {
                       <div>
                         <h3 className="font-600 text-[#1B1B1F]">{expense.description}</h3>
                         <p className="text-xs text-[#5F6368] mt-1">
-                          {(expense.paid_by_names || []).join(', ') || 'You'}
+                          {(expense.payers || []).map(p => p.display_name || 'Unknown').join(', ') || 'You'}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-600 text-[#1B1B1F]">
-                          {(expense.total_amount || expense.amount || 0).toFixed(2)} {expense.currency}
+                          {expense.total_amount.toFixed(2)} {expense.currency}
                         </p>
-                        <p className="text-xs text-[#5F6368]">{formatDate(expense.expense_date || expense.date)}</p>
+                        <p className="text-xs text-[#5F6368]">{formatDate(expense.expense_date)}</p>
                       </div>
                     </div>
                   </Card>
