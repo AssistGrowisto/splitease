@@ -48,7 +48,7 @@ class GoogleSheetsBase {
     this.auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: config.google.serviceAccountEmail,
-        private_key: config.google.privateKey?.replace(/\\n/g, '\n'),
+        private_key: (() => { const pk = config.google.privateKey || ''; if (pk.startsWith('-----BEGIN')) return pk; try { const decoded = Buffer.from(pk, 'base64').toString('utf-8'); if (decoded.startsWith('-----BEGIN')) return decoded; } catch(e) {} return pk.replace(/\\n/g, '\n'); })(),
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
