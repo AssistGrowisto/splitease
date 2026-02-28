@@ -21,8 +21,19 @@ export async function GET(request: NextRequest) {
 
     const filteredGroups = groups.filter(g => g !== null && (!status || g.status === status));
 
+    // Enrich each group with member_count
+    const enrichedGroups = await Promise.all(
+      filteredGroups.map(async (g: any) => {
+        const members = await groupMemberRepo.findByGroupId(g.group_id);
+        return {
+          ...g,
+          member_count: members.length,
+        };
+      })
+    );
+
     return NextResponse.json(
-      { success: true, data: { groups: filteredGroups } },
+      { success: true, data: { groups: enrichedGroups } },
       { status: 200 }
     );
   } catch (error) {
