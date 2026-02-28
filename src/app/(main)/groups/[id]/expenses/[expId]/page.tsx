@@ -60,10 +60,58 @@ export default function ExpenseDetailPage() {
   const fetchExpense = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/groups/${groupId}/expenses/${expenseId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExpense(data);
+
+      // Fetch expense detail and group members in parallel
+      const [expenseRes, groupRes] = await Promise.all([
+        fetch(`/api/groups/${groupId}/expenses/${expenseId}`),
+        fetch(`/api/groups/${groupId}`),
+      ]);
+
+      // Build member name lookup from group data
+      const memberMap: Record<string, string> = {};
+      if (groupRes.ok) {
+        const groupResult = await groupRes.json();
+        const members = groupResult.data?.members || [];
+        members.forEach((m: any) => {
+          memberMap[m.user_id || m.id] = m.display_name || m.user_id || m.id;
+        });
+      }
+
+      if (expenseRes.ok) {
+        const result = await expenseRes.json();
+        const data = result.data || result;
+        const exp = data.expense || {};
+
+        // Map API response fields to component interface
+        const expenseDetail: ExpenseDetail = {
+          id: exp.expense_id || '',
+          description: exp.description || '',
+          amount: typeof exp.total_amount === 'number' ? exp.total_amount : parseFloat(exp.total_amount) || 0,
+          currency: exp.currency || 'INR',
+          date: exp.expense_date || exp.created_at || '',
+          creator_id: exp.created_by || '',
+          is_orphaned: exp.is_settlement === true,
+          paid_by: (data.payers || []).map((p: any) => ({
+            user_id: p.user_id,
+            display_name: memberMap[p.user_id] || p.user_id,
+            amount: typeof p.amount_paid === 'number' ? p.amount_paid : parseFloat(p.amount_paid) || 0,
+          })),
+          splits: (data.splits || []).map((s: any) => ({
+            member_id: s.user_id,
+            display_name: memberMap[s.user_id] || s.user_id,
+            amount: typeof s.split_amount === 'number' ? s.split_amount : parseFloat(s.split_amount) || 0,
+          })),
+          activity_log: (data.activities || []).map((a: any) => ({
+            id: a.log_id || '',
+            user: memberMap[a.user_id] || a.user_id || '',
+            action: a.action || '',
+            description: typeof a.details === 'string' ? a.details : JSON.stringify(a.details || ''),
+            timestamp: a.timestamp || a.created_at || '',
+          })),
+          receipt_url: exp.receipt_url || undefined,
+        };
+
+        setExpense(expenseDetail);
       }
     } catch (error) {
       console.error('Failed to fetch expense:', error);
