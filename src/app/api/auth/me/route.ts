@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Strip password_hash before sending response
+    const { password_hash, ...safeUser } = user;
+
     return NextResponse.json(
-      { success: true, data: { user } },
+      { success: true, data: { user: safeUser } },
       { status: 200 }
     );
   } catch (error) {
