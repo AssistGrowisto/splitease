@@ -9,22 +9,21 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
 
 interface Group {
-  id: string;
-  name: string;
-  member_count: number;
-  user_balance: number;
+  group_id: string;
+  group_name: string;
+  created_by: string;
   base_currency: string;
-  is_archived: boolean;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  member_count?: number;
+  user_balance?: number;
 }
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchGroups();
-  }, []);
 
   const fetchGroups = async () => {
     try {
@@ -47,16 +46,16 @@ export default function GroupsPage() {
   }, [activeTab]);
 
   const filteredGroups = groups.filter(g => 
-    activeTab === 'past' ? g.is_archived : !g.is_archived
+    activeTab === 'past' ? g.status === 'archived' : g.status === 'active'
   );
 
-  const getBalanceBadge = (balance: number) => {
-    if (balance > 0) {
+  const getBalanceBadge = (balance?: number) => {
+    if (!balance || balance === 0) {
+      return <Badge variant="gray">Settled</Badge>;
+    } else if (balance > 0) {
       return <Badge variant="green">You are owed {balance.toFixed(2)}</Badge>;
     } else if (balance < 0) {
       return <Badge variant="red">You owe {Math.abs(balance).toFixed(2)}</Badge>;
-    } else {
-      return <Badge variant="gray">Settled</Badge>;
     }
   };
 
@@ -97,13 +96,13 @@ export default function GroupsPage() {
           />
         ) : (
           filteredGroups.map((group) => (
-            <Link key={group.id} href={`/groups/${group.id}`}>
+            <Link key={group.group_id} href={`/groups/${group.group_id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-600 text-[#1B1B1F] text-base">{group.name}</h3>
+                    <h3 className="font-600 text-[#1B1B1F] text-base">{group.group_name}</h3>
                     <p className="text-sm text-[#5F6368] mt-1">
-                      {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
+                      {group.member_count || 1} {(group.member_count || 1) === 1 ? 'member' : 'members'}
                     </p>
                   </div>
                   <div className="text-right">
