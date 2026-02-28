@@ -8,15 +8,19 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
 
 interface Activity {
-  id: string;
+  id?: string;
+  activity_log_id?: string;
   group_id: string;
   group_name: string;
-  user_name: string;
+  user_name?: string;
+  user_display_name?: string;
   action: string;
-  description: string;
+  description?: string;
+  details?: any;
   timestamp: string;
+  expense_id?: string;
   related_expense_id?: string;
-  is_read: boolean;
+  is_read?: boolean;
 }
 
 export default function ActivityPage() {
@@ -32,8 +36,9 @@ export default function ActivityPage() {
       setIsLoading(true);
       const response = await fetch('/api/activity');
       if (response.ok) {
-        const data = await response.json();
-        setActivities(data);
+        const result = await response.json();
+        const actArray = result.data?.activities || result.activities || (Array.isArray(result) ? result : []);
+        setActivities(Array.isArray(actArray) ? actArray : []);
       }
     } catch (error) {
       console.error('Failed to fetch activities:', error);
@@ -50,7 +55,7 @@ export default function ActivityPage() {
 
       setActivities((prev) =>
         prev.map((a) =>
-          a.id === activityId ? { ...a, is_read: true } : a
+          (a.activity_log_id || a.id) === activityId ? { ...a, is_read: true } : a
         )
       );
     } catch (error) {
@@ -89,13 +94,13 @@ export default function ActivityPage() {
         ) : (
           activities.map((activity) => (
             <Link
-              key={activity.id}
+              key={activity.activity_log_id || activity.id || activity.timestamp}
               href={
-                activity.related_expense_id
-                  ? `/groups/${activity.group_id}/expenses/${activity.related_expense_id}`
+                (activity.expense_id || activity.related_expense_id)
+                  ? `/groups/${activity.group_id}/expenses/${activity.expense_id || activity.related_expense_id}`
                   : `/groups/${activity.group_id}`
               }
-              onClick={() => !activity.is_read && markAsRead(activity.id)}
+              onClick={() => !activity.is_read && markAsRead(activity.activity_log_id || activity.id || '')}
             >
               <Card className={`hover:shadow-md transition-shadow cursor-pointer ${
                 !activity.is_read ? 'bg-[#E3F2FD]' : ''
@@ -106,7 +111,7 @@ export default function ActivityPage() {
                       {activity.group_name}
                     </p>
                     <p className="text-base text-[#1B1B1F] mt-1">
-                      <span className="font-500">{activity.user_name}</span>{' '}
+                      <span className="font-500">{activity.user_display_name || activity.user_name || 'Someone'}</span>{' '}
                       {activity.action}
                     </p>
                     <p className="text-sm text-[#5F6368] mt-1">
