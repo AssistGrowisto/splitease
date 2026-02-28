@@ -32,8 +32,8 @@ export default function GroupsPage() {
       const status = activeTab === 'past' ? 'archived' : 'active';
       const response = await fetch(`/api/groups?status=${status}`);
       if (response.ok) {
-        const data = await response.json();
-        setGroups(data);
+        const result = await response.json();
+        setGroups(result.data?.groups || result.groups || (Array.isArray(result) ? result : []));
       }
     } catch (error) {
       console.error('Failed to fetch groups:', error);
@@ -87,7 +87,7 @@ export default function GroupsPage() {
           </div>
         ) : filteredGroups.length === 0 ? (
           <EmptyState
-            icon="👥"
+            icon="ð¥"
             title="No groups yet"
             description={activeTab === 'active' 
               ? "Create one to start splitting expenses!" 
