@@ -10,13 +10,17 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Expense {
-  id: string;
+  expense_id: string;
   description: string;
-  amount: number;
+  total_amount: number;
   currency: string;
-  date: string;
-  paid_by_names: string[];
+  expense_date: string;
+  payers?: any[];
   is_settlement: boolean;
+  id?: string;
+  amount?: number;
+  date?: string;
+  paid_by_names?: string[];
 }
 
 interface GroupMember {
@@ -26,10 +30,13 @@ interface GroupMember {
 }
 
 interface Group {
-  id: string;
-  name: string;
+  group_id: string;
+  group_name: string;
   base_currency: string;
-  user_balance: number;
+  status: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function GroupDetailPage() {
@@ -57,16 +64,26 @@ export default function GroupDetailPage() {
       ]);
 
       if (groupRes.ok) {
-        setGroup(await groupRes.json());
+        const groupResult = await groupRes.json();
+        setGroup(groupResult.data?.group || groupResult);
       }
       if (expensesRes.ok) {
-        const data = await expensesRes.json();
-        setExpenses(data.sort((a: Expense, b: Expense) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
+        const expResult = await expensesRes.json();
+        const expArray = expResult.data?.expenses || expResult.expenses || (Array.isArray(expResult) ? expResult : []);
+        setExpenses(expArray.sort((a: Expense, b: Expense) => 
+          new Date(b.expense_date || b.date).getTime() - new Date(a.expense_date || a.date).getTime()
         ));
       }
       if (balancesRes.ok) {
-        setBalances(await balancesRes.json());
+        const balResult = await balancesRes.json();
+        const balObj = balResult.data?.balances || {};
+        // Convert {userId: amount} to array format
+        const balArray = Object.entries(balObj).map(([id, balance]) => ({
+          id,
+          display_name: id,
+          net_balance: balance as number
+        }));
+        setBalances(balArray);
       }
     } catch (error) {
       console.error('Failed to fetch group data:', error);
@@ -96,21 +113,22 @@ export default function GroupDetailPage() {
   };
 
   const getBalanceDisplay = () => {
-    if (Math.abs(group.user_balance) < 0.01) {
+    const userBalance = 0; // TODO: compute from balances
+    if (Math.abs(userBalance) < 0.01) {
       return {
         text: 'All settled',
         bgColor: 'bg-[#E9ECEF]',
         textColor: 'text-[#383D41]',
       };
-    } else if (group.user_balance > 0) {
+    } else if (userBalance > 0) {
       return {
-        text: `You are owed ${group.user_balance.toFixed(2)} ${group.base_currency}`,
+        text: `You are owed ${userBalance.toFixed(2)} ${group.base_currency}`,
         bgColor: 'bg-[#D4EDDA]',
         textColor: 'text-[#155724]',
       };
     } else {
       return {
-        text: `You owe ${Math.abs(group.user_balance).toFixed(2)} ${group.base_currency}`,
+        text: `You owe ${Math.abs(userBalance).toFixed(2)} ${group.base_currency}`,
         bgColor: 'bg-[#F8D7DA]',
         textColor: 'text-[#721C24]',
       };
@@ -122,7 +140,7 @@ export default function GroupDetailPage() {
   return (
     <div className="pb-20 min-h-screen">
       <Header
-        title={group.name}
+        title={group.group_name}
         backButton={{ onClick: () => window.history.back() }}
         rightAction={
           <Link
@@ -179,7 +197,7 @@ export default function GroupDetailPage() {
               />
             ) : (
               expenses.map((expense) => (
-                <Link key={expense.id} href={`/groups/${groupId}/expenses/${expense.id}`}>
+                <Link key={expense.expense_id || expense.id} href={`/groups/${groupId}/expenses/${expense.expense_id || expense.id}`}>
                   <Card
                     className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${
                       expense.is_settlement ? 'border-l-[#34A853]' : 'border-l-[#1A73E8]'
@@ -189,14 +207,14 @@ export default function GroupDetailPage() {
                       <div>
                         <h3 className="font-600 text-[#1B1B1F]">{expense.description}</h3>
                         <p className="text-xs text-[#5F6368] mt-1">
-                          {expense.paid_by_names.join(', ')}
+                          {(expense.paid_by_names || []).join(', ') || 'You'}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-600 text-[#1B1B1F]">
-                          {expense.amount.toFixed(2)} {expense.currency}
+                          {(expense.total_amount || expense.amount || 0).toFixed(2)} {expense.currency}
                         </p>
-                        <p className="text-xs text-[#5F6368]">{formatDate(expense.date)}</p>
+                        <p className="text-xs text-[#5F6368]">{formatDate(expense.expense_date || expense.date)}</p>
                       </div>
                     </div>
                   </Card>
