@@ -6,10 +6,10 @@ import { rateLimiter } from '@/lib/middleware/rate-limiter';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: 5/hour per IP
+    // Rate limit: 50/hour per IP
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const key = `register:${ip}`;
-    const allowed = rateLimiter.check(key, 5, 3600000); // 3600000ms = 1 hour
+    const allowed = rateLimiter.check(key, 50, 3600000); // 3600000ms = 1 hour
     
     if (!allowed) {
       return NextResponse.json(
