@@ -31,11 +31,15 @@ export async function POST(request: NextRequest) {
     const { email, password } = validationResult.data;
 
     // Authenticate user
-    const { user, token } = await authService.login(email, password);
-
-    if (!user || !token) {
+    let user, token: string;
+    try {
+      const result = await authService.login(email, password);
+      user = result.user;
+      token = result.token;
+    } catch (authError) {
+      const message = authError instanceof Error ? authError.message : 'Invalid email or password';
       return NextResponse.json(
-        { success: false, error: 'Invalid email or password' },
+        { success: false, error: message },
         { status: 401 }
       );
     }
