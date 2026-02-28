@@ -11,7 +11,7 @@ import type { JwtPayload } from '@/types';
 export async function verifyAuth(request: NextRequest): Promise<{ user_id: string; email: string }> {
   try {
     // Try to get token from cookies first
-    let token = request.cookies.get('token')?.value;
+    let token = request.cookies.get('auth_token')?.value;
 
     // If not in cookies, try Authorization header
     if (!token) {
