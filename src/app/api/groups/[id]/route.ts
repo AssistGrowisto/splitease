@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateGroupSchema } from '@/lib/utils/validators';
-import { groupRepo, groupMemberRepo, expenseRepo, expensePayerRepo, expenseSplitRepo } from '@/lib/repositories';
+import { groupRepo, groupMemberRepo, expenseRepo, expensePayerRepo, expenseSplitRepo, userRepo } from '@/lib/repositories';
 import { verifyAuth } from '@/lib/middleware/auth';
 import { cacheManager } from '@/lib/cache';
 
@@ -31,8 +31,22 @@ export async function GET(
       );
     }
 
-    // Get group members
-    const members = await groupMemberRepo.findByGroupId(groupId);
+    // Get group members and enrich with user details
+    const rawMembers = await groupMemberRepo.findByGroupId(groupId);
+    const members = await Promise.all(
+      rawMembers.map(async (gm) => {
+        const user = await userRepo.findById(gm.user_id);
+        return {
+          id: gm.user_id,
+          user_id: gm.user_id,
+          display_name: user?.display_name || gm.user_id,
+          email: user?.email || '',
+          role: gm.role,
+          status: gm.status,
+          joined_at: gm.joined_at
+        };
+      })
+    );
 
     return NextResponse.json(
       { success: true, data: { group, members } },
