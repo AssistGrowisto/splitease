@@ -68,7 +68,7 @@ export default function CreateGroupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: groupName.trim(),
+          group_name: groupName.trim(),
           base_currency: baseCurrency,
           members: members.map(m => ({ email: m.email })),
         }),
@@ -76,12 +76,13 @@ export default function CreateGroupPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to create group');
+        throw new Error(data.error || data.message || 'Failed to create group');
       }
 
       const data = await response.json();
       showNotification('Group created successfully', 'success');
-      router.push(`/groups/${data.id}`);
+      const group = data.data?.group || data;
+      router.push(`/groups/${group.group_id || group.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create group');
     } finally {
