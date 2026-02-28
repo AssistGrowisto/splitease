@@ -125,8 +125,8 @@ export default function ExpenseDetailPage() {
     return <div>Expense not found</div>;
   }
 
-  const canEdit = user?.id === expense.creator_id && !expense.is_orphaned;
-  const canDelete = user?.id === expense.creator_id;
+  const canEdit = user?.user_id === expense.creator_id && !expense.is_orphaned;
+  const canDelete = user?.user_id === expense.creator_id;
 
   return (
     <div className="pb-20 min-h-screen">

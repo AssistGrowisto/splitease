@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
-  id: string;
+  user_id: string;
   email: string;
   display_name: string;
   created_at: string;
@@ -35,7 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         const response = await fetch('/api/auth/me');
         if (response.ok) {
-          const userData = await response.json();
+          const result = await response.json();
+          const userData = result.data?.user || result;
           setUser(userData);
           setIsAuthenticated(true);
         } else {
@@ -67,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.error || error.message || 'Login failed');
       }
 
-      const userData = await response.json();
+      const result = await response.json();
+      const userData = result.data?.user || result;
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
@@ -169,7 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message || 'Update failed');
       }
 
-      const updatedUser = await response.json();
+      const result = await response.json();
+      const updatedUser = result.data?.user || result;
       setUser(updatedUser);
     } catch (error) {
       throw error;

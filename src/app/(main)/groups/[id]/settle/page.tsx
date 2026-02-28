@@ -86,7 +86,7 @@ export default function SettleUpPage() {
         {user && (
           <SettleForm
             debts={debts}
-            currentUserId={user.id}
+            currentUserId={user.user_id}
             onSubmit={handleSubmit}
           />
         )}

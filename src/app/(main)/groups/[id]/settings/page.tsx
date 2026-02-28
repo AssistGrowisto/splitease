@@ -76,7 +76,7 @@ export default function GroupSettingsPage() {
     return <div>Group not found</div>;
   }
 
-  const isCreator = user?.id === group.creator_id;
+  const isCreator = user?.user_id === group.creator_id;
 
   const handleSaveName = async () => {
     if (!editingName.trim()) return;
