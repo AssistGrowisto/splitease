@@ -53,8 +53,13 @@ export default function AddExpensePage() {
       if (groupRes.ok) {
         const groupResult = await groupRes.json();
         const groupData = groupResult.data || groupResult;
-        const members = groupData.members || [];
-        setGroupMembers(members);
+        const rawMembers = groupData.members || [];
+        const mappedMembers = rawMembers.map((m: any) => ({
+          id: m.user_id || m.id,
+          display_name: m.display_name || m.user_id || m.id,
+          email: m.email || '',
+        }));
+        setGroupMembers(mappedMembers);
         
         const group = groupData.group || groupData;
         setBaseCurrency(group?.base_currency || 'INR');

@@ -58,31 +58,47 @@ export default function EditExpensePage() {
       ]);
 
       if (groupRes.ok) {
-        const group = await groupRes.json();
-        setGroupMembers(group.members || []);
-        setBaseCurrency(group.base_currency);
+        const groupResult = await groupRes.json();
+        const groupData = groupResult.data || groupResult;
+        const rawMembers = groupData.members || [];
+        const mappedMembers = rawMembers.map((m: any) => ({
+          id: m.user_id || m.id,
+          display_name: m.display_name || m.user_id || m.id,
+          email: m.email || '',
+        }));
+        setGroupMembers(mappedMembers);
+        const group = groupData.group || groupData;
+        setBaseCurrency(group?.base_currency || 'INR');
       }
 
       if (expenseRes.ok) {
-        const expense = await expenseRes.json();
+        const expResult = await expenseRes.json();
+        const expData = expResult.data || expResult;
+        const exp = expData.expense || expData;
+        const payers = expData.payers || [];
+        const splits = expData.splits || [];
         setInitialData({
-          description: expense.description,
-          amount: expense.amount,
-          currency: expense.currency,
-          date: expense.date,
-          paid_by: expense.paid_by[0]?.user_id || '',
-          split_type: expense.split_type || 'equal',
-          splits: expense.splits.reduce((acc: any, s: any) => {
-            acc[s.member_id] = { member_id: s.member_id, amount: s.amount };
+          description: exp.description || '',
+          amount: typeof exp.total_amount === 'number' ? exp.total_amount : parseFloat(exp.total_amount) || 0,
+          currency: exp.currency || 'INR',
+          date: exp.expense_date ? exp.expense_date.split('T')[0] : '',
+          paid_by: payers[0]?.user_id || '',
+          split_type: exp.split_type || 'equal',
+          splits: splits.reduce((acc: any, s: any) => {
+            const uid = s.user_id || s.member_id;
+            acc[uid] = { member_id: uid, amount: typeof s.split_amount === 'number' ? s.split_amount : parseFloat(s.split_amount) || 0 };
             return acc;
           }, {}),
-          receipt_url: expense.receipt_url,
+          receipt_url: exp.receipt_url,
         });
       }
 
       if (currenciesRes.ok) {
-        const data = await currenciesRes.json();
-        setCurrencies(data);
+        const currResult = await currenciesRes.json();
+        const rates = currResult.data?.rates || currResult.rates || currResult;
+        if (Array.isArray(rates) && rates.length > 0) {
+          setCurrencies(rates);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
