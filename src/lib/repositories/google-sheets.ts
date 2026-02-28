@@ -503,7 +503,7 @@ export class GoogleSheetsExpenseRepo extends GoogleSheetsBase implements IExpens
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.expense_id === id && !obj.deletedAt) {
+      if (obj.expense_id === id && obj.status !== 'deleted') {
         return this.parseExpense(obj);
       }
     }
@@ -518,7 +518,7 @@ export class GoogleSheetsExpenseRepo extends GoogleSheetsBase implements IExpens
 
     for (let i = 1; i < data.length; i++) {
       const obj = this.rowToObject(headers, data[i]);
-      if (obj.group_id === groupId && !obj.deletedAt) {
+      if (obj.group_id === groupId && obj.status !== 'deleted') {
         expenses.push(this.parseExpense(obj));
       }
     }
@@ -581,7 +581,8 @@ export class GoogleSheetsExpenseRepo extends GoogleSheetsBase implements IExpens
       if (obj.expense_id === id) {
         const updated = {
           ...obj,
-          deletedAt: new Date().toISOString(),
+          status: 'deleted',
+          updated_at: new Date().toISOString(),
         };
         const row = this.objectToRow(headers, updated);
         await this.updateRow(TABS.EXPENSES, i - 1, row);
