@@ -15,14 +15,21 @@ interface Expense {
   total_amount: number;
   currency: string;
   expense_date: string;
-  payers?: any[];
+  payers?: { user_id: string; amount_paid: number }[];
   is_settlement: boolean;
 }
 
-interface GroupMember {
-  id: string;
+interface BalanceMember {
+  user_id: string;
   display_name: string;
   net_balance: number;
+}
+
+interface MemberInfo {
+  id: string;
+  user_id: string;
+  display_name: string;
+  email: string;
 }
 
 interface Group {
@@ -30,9 +37,6 @@ interface Group {
   group_name: string;
   base_currency: string;
   status: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export default function GroupDetailPage() {
@@ -41,7 +45,9 @@ export default function GroupDetailPage() {
 
   const [group, setGroup] = useState<Group | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [balances, setBalances] = useState<GroupMember[]>([]);
+  const [balanceMembers, setBalanceMembers] = useState<BalanceMember[]>([]);
+  const [userBalance, setUserBalance] = useState(0);
+  const [members, setMembers] = useState<MemberInfo[]>([]);
   const [activeTab, setActiveTab] = useState<'expenses' | 'balances'>('expenses');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,33 +59,65 @@ export default function GroupDetailPage() {
     try {
       setIsLoading(true);
 
-      const [groupRes, expensesRes, balancesRes] = await Promise.all([
+      const [groupRes, expensesRes, balancesRes, meRes] = await Promise.all([
         fetch(`/api/groups/${groupId}`),
         fetch(`/api/groups/${groupId}/expenses`),
         fetch(`/api/groups/${groupId}/balances`),
+        fetch('/api/auth/me'),
       ]);
+
+      let memberList: MemberInfo[] = [];
+      let currentUserId = '';
+
+      if (meRes.ok) {
+        const meResult = await meRes.json();
+        currentUserId = meResult.data?.user?.user_id || '';
+      }
 
       if (groupRes.ok) {
         const groupResult = await groupRes.json();
-        setGroup(groupResult.data?.group || groupResult);
+        const grp = groupResult.data?.group || groupResult;
+        setGroup(grp);
+        memberList = (groupResult.data?.members || []).map((m: any) => ({
+          id: m.user_id || m.id,
+          user_id: m.user_id || m.id,
+          display_name: m.display_name || m.user_id || m.id,
+          email: m.email || '',
+        }));
+        setMembers(memberList);
       }
+
       if (expensesRes.ok) {
         const expResult = await expensesRes.json();
-        const expArray = expResult.data?.expenses || [];
-        setExpenses(expArray.sort((a: Expense, b: Expense) => 
+        const expArray = Array.isArray(expResult.data?.expenses) ? expResult.data.expenses : [];
+        expArray.sort((a: Expense, b: Expense) =>
           new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
-        ));
+        );
+        setExpenses(expArray);
       }
+
       if (balancesRes.ok) {
         const balResult = await balancesRes.json();
         const balObj = balResult.data?.balances || {};
-        // Convert {userId: amount} to array format
-        const balArray = Object.entries(balObj).map(([id, balance]) => ({
-          id,
-          display_name: id,
-          net_balance: balance as number
+
+        // Build member lookup
+        const memberMap: Record<string, string> = {};
+        memberList.forEach((m) => {
+          memberMap[m.user_id] = m.display_name;
+        });
+
+        // Convert {userId: amount} to array format with display names
+        const balArray: BalanceMember[] = Object.entries(balObj).map(([userId, balance]) => ({
+          user_id: userId,
+          display_name: memberMap[userId] || userId,
+          net_balance: balance as number,
         }));
-        setBalances(balArray);
+        setBalanceMembers(balArray);
+
+        // Set current user's balance
+        if (currentUserId && balObj[currentUserId] !== undefined) {
+          setUserBalance(balObj[currentUserId] as number);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch group data:', error);
@@ -108,8 +146,15 @@ export default function GroupDetailPage() {
     });
   };
 
+  const getPayerNames = (expense: Expense) => {
+    if (!expense.payers || expense.payers.length === 0) return 'Unknown';
+    return expense.payers.map((p) => {
+      const member = members.find((m) => m.user_id === p.user_id);
+      return member?.display_name || p.user_id;
+    }).join(', ');
+  };
+
   const getBalanceDisplay = () => {
-    const userBalance = 0; // TODO: compute from balances
     if (Math.abs(userBalance) < 0.01) {
       return {
         text: 'All settled',
@@ -203,7 +248,7 @@ export default function GroupDetailPage() {
                       <div>
                         <h3 className="font-600 text-[#1B1B1F]">{expense.description}</h3>
                         <p className="text-xs text-[#5F6368] mt-1">
-                          {(expense.payers || []).map(p => p.display_name || 'Unknown').join(', ') || 'You'}
+                          {getPayerNames(expense)}
                         </p>
                       </div>
                       <div className="text-right">
@@ -220,7 +265,7 @@ export default function GroupDetailPage() {
           </>
         ) : (
           <>
-            {balances.length === 0 ? (
+            {balanceMembers.length === 0 ? (
               <EmptyState
                 icon="⚖️"
                 title="No balances"
@@ -228,8 +273,8 @@ export default function GroupDetailPage() {
               />
             ) : (
               <>
-                {balances.map((member) => (
-                  <Card key={member.id}>
+                {balanceMembers.map((member) => (
+                  <Card key={member.user_id}>
                     <div className="flex items-center justify-between">
                       <p className="font-500 text-[#1B1B1F]">{member.display_name}</p>
                       <Badge variant={member.net_balance > 0 ? 'green' : member.net_balance < 0 ? 'red' : 'gray'}>
@@ -265,7 +310,7 @@ export default function GroupDetailPage() {
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 11-2 0 1 1 0 012 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
             clipRule="evenodd"
           />
         </svg>
