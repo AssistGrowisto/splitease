@@ -1,0 +1,41 @@
+{
+  "name": "splitease",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/node": "^25.3.2",
+    "@types/react": "^19.2.14",
+    "autoprefixer": "^10.4.27",
+    "bcryptjs": "^3.0.3",
+    "date-fns": "^4.1.0",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "nanoid": "^3.3.11",
+    "next": "^14.2.35",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^8.0.1",
+    "postcss": "^8.5.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^7.0.11"
+  }
+}
