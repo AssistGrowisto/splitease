@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base Styles */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-ua-light text-ua-dark font-sans;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-bold text-ua-dark;
+}
+
+h1 {
+  @apply text-4xl;
+}
+
+h2 {
+  @apply text-3xl;
+}
+
+h3 {
+  @apply text-2xl;
+}
+
+h4 {
+  @apply text-xl;
+}
+
+p {
+  @apply text-base text-ua-grey leading-relaxed;
+}
+
+a {
+  @apply text-ua-dark hover:text-ua-grey transition-colors;
+}
+
+/* Utility Classes */
+.text-uppercase {
+  @apply uppercase tracking-widest text-sm;
+}
+
+.container-padding {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+.section-spacing {
+  @apply py-8 md:py-12 lg:py-16;
+}
+
+.button-reset {
+  @apply bg-none border-none p-0 cursor-pointer;
+}
+
+/* Product Grid */
+.product-grid {
+  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-ua-light;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-ua-grey rounded-sm;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-ua-dark;
+}
